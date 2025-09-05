@@ -1,2 +1,2 @@
 # Machine-Learning
-Linear Regression, Genetic Algorithms
+Linear Regression, Logistic Regression, Genetic Algorithms
