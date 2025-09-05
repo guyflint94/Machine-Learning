@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('Training Data set.csv')  # read the csv table into df. the df contains the features and the target
-
+df = pd.read_csv('house_price_csv.csv')  # read the csv table into df. the df contains the features and the target
 
 y_df = df["price"] # Extract y (target column) while still in DataFrame
 x_df = df.drop("price", axis=1) # Remove 'Price' from df to keep only the features
