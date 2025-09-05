@@ -1,0 +1,61 @@
+"""
+In this code I will create a logistic regression model to determine whether a person has health issues or not
+based on the data given in the csv file
+"""
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import linear_model
+from sklearn.model_selection import train_test_split
+
+df = pd.read_csv('synthetic_coffee_health_10000.csv', na_values=[], keep_default_na=False)  # read the csv file. last 2 ensures that "None" in the CSV stays a normal string
+copy_df = df  # created a copy just for checking on data before changing the df
+
+df = df.drop(['Gender', 'Country', 'ID', 'Coffee_Intake', 'Caffeine_mg'], axis=1)  # just from common sense - drop because they are irrelevant
+dummies_df = df[['Sleep_Quality', 'Stress_Level', 'Occupation']]  # create a 2D df with categorial data
+target_dummies = df[['Health_Issues']]
+dummies_df = pd.get_dummies(dummies_df, drop_first=True)
+target_dummies = pd.get_dummies(target_dummies)
+dummies_df = dummies_df.astype(int)  # convert True\False to 1\0
+target_dummies = target_dummies.astype(int)  # convert True\False to 1\0
+
+df = df.drop(['Sleep_Quality', 'Stress_Level', 'Health_Issues', 'Occupation'], axis=1)
+
+merged_df = pd.concat([df, dummies_df, target_dummies], axis=1)
+
+corr = merged_df.corr()
+sns.heatmap(corr, annot=True, cmap="coolwarm", linewidths=0.5)
+plt.show()
+
+# after plotting the 1st heatmap we can see all those are irrelevant, so drop
+merged_df = merged_df.drop(['Occupation_Office','Occupation_Other','Occupation_Student','Occupation_Service', 'Physical_Activity_Hours','Smoking','Alcohol_Consumption'], axis=1)
+
+new_corr = merged_df.corr()
+sns.heatmap(new_corr, annot=True, cmap='coolwarm', linewidths=0.5)
+plt.show()
+
+X = merged_df.drop(['Health_Issues_Severe','Health_Issues_Mild','Health_Issues_None','Health_Issues_Moderate'], axis=1)
+y = copy_df.Health_Issues
+
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+model = linear_model.LogisticRegression(max_iter=10000)
+model.fit(x_train, y_train)
+
+print(f"score of model: {model.score(x_test, y_test)}")
+
+# currently I am trying to predict a None condition for health issue
+predict_this = pd.DataFrame({'Age':[28],
+                             'Sleep_Hours':[8],
+                             'BMI':[24],
+                             'Heart_Rate':[78],
+                             'Sleep_Quality_Fair':[1],
+                             'Sleep_Quality_Good':[0],
+                             'Sleep_Quality_Poor':[0],
+                             'Stress_Level_Low':[1],
+                             'Stress_Level_Medium':[0]})
+
+print(f"Predicted Health Status: {model.predict(predict_this)}")
+
+
