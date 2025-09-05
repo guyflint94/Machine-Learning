@@ -1,1 +1,95 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
+df = pd.read_csv('Training Data set.csv')  # read the csv table into df. the df contains the features and the target
+
+
+y_df = df["price"] # Extract y (target column) while still in DataFrame
+x_df = df.drop("price", axis=1) # Remove 'Price' from df to keep only the features
+x_df = df.drop("lot_size", axis=1) # Remove 'lot size' from df. it doesn't behave linearly
+x_df = pd.get_dummies(x_df, columns=['zip_code'], drop_first=False)
+
+# examine the relation between the target and each feature (linear or not ?)
+fig, axs = plt.subplots(2, 2, figsize=(10,8))  # optional: adjust size
+
+axs[0, 0].scatter(df['baths'], df['price'], color='green')
+axs[0, 0].set_xlabel('baths')
+axs[0, 0].set_ylabel('price')
+axs[0, 0].grid(True)
+
+axs[0, 1].scatter(df['beds'], df['price'])
+axs[0, 1].set_xlabel('beds')
+axs[0, 1].set_ylabel('price')
+axs[0, 1].grid(True)
+
+axs[1, 0].scatter(df['size'], df['price'], color='red')
+axs[1, 0].set_xlabel('size')
+axs[1, 0].set_ylabel('price')
+axs[1, 0].grid(True)
+
+axs[1, 1].scatter(df['lot_size'], df['price'], color='black')
+axs[1, 1].set_xlabel('lot_size')
+axs[1, 1].set_ylabel('price')
+axs[1, 1].grid(True)
+
+plt.tight_layout()
+plt.show()
+
+x = x_df.to_numpy()  # convert the features dataframe to a Numpy array
+y = y_df.to_numpy()  # convert the target column dataframe to a Numpy array
+y = y.reshape(-1,1)  # reshape y(target) to be a column vector
+w = np.zeros((x.shape[1], 1))  # create w (weights), a column vector
+b = 0  # set b (bias, scalar) to 0
+
+x_scaled = np.zeros_like(x) # create a matrix x_scaled with zeros. the size of x. assign normalized values later
+
+y_mean = y.mean()
+y_std = y.std()
+y_scaled = (y - y_mean) / y_std
+
+# now we start the Z-Score Normalization
+x_scaled = x.copy()
+for i in range(x.shape[1]):
+    mean = np.mean(x[:, i])
+    std = np.std(x[:, i])
+    x_scaled[:, i] = (x[:, i] - mean) / std
+
+
+    # write the Cost Function J(w,b)
+f_w_b = np.dot(x_scaled, w) + b  # create the model's prediction (hypothesis function)
+m = x_scaled.shape[0] # number of samples
+j_w_b = (1/(2*m)) * np.sum((f_w_b - y_scaled)**2)  # cost function
+
+
+# Gradient Descent
+iterations = 10000
+alpha = 0.001
+J_history = []  # to store cost values for each iteration
+for i in range(iterations) :
+    f_w_b = np.dot(x_scaled, w) + b
+    dj_dw = (1 / m) * np.dot(x_scaled.T, (f_w_b - y_scaled))
+    dj_db = (1 / m) * np.sum(f_w_b - y_scaled)
+
+    # Compute and store the cost
+    j_w_b = (1 / (2 * m)) * np.sum((f_w_b - y_scaled) ** 2)
+    J_history.append(j_w_b)
+
+    w = w - alpha * dj_dw
+    b = b - alpha * dj_db
+
+
+# After the loop, plot the learning curve
+plt.plot(range(iterations), J_history)
+plt.xlabel("Iteration")
+plt.ylabel("Cost J(w, b)")
+plt.title("Learning Curve")
+plt.grid(True)
+plt.show()
+
+print(w)
+
+f_w_b_unscaled = f_w_b * y_std + y_mean
+
+print("Predictions preview:", f_w_b_unscaled[:5])
+print("Actual prices:", y[:5])
