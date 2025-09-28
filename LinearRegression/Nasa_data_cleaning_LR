@@ -1,0 +1,142 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import linregress
+
+# the function recieves a csv file as an argument. It handles different scenarios (exceptions and errors).
+def load_data(file_name):
+
+    if not file_name.endswith('.csv'): # if the file is not a csv file print an error and return None
+        print("Error! the file type must be 'csv' type")
+        return None
+
+    try:
+        df = pd.read_csv(file_name) # assign to df if the file exists and valid
+        return df
+    except FileNotFoundError:
+        print("Error! the file has not been found.")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
+    return None
+
+# the function receives a df as an argument. it will return a filtered df where its 'Close Approach Date' column will have dates from year 2000 and later
+def mark_data(df):
+
+    df['Close Approach Date'] = pd.to_datetime(df['Close Approach Date'], errors='coerce') # Convert column from object (string) to datetime to enable date operations
+    filtered_df1 = df[df['Close Approach Date'].dt.year >= 2000] # Create a new df (filtered_df1) that contains only the rows from df where the 'Close Approach Date' is in the year 2000 or later.
+    return filtered_df1
+
+# the function gets a df as an argument. it will delete 3 columns and return a tuple of (number of rows, number of columns, a list of the columns names)
+def data_details(df):
+
+    filtered_df2 = df.drop(columns = ["Orbiting Body", "Neo Reference ID", "Equinox"]) # delete this 3 columns
+    return (
+        len(filtered_df2),  # number of rows
+        filtered_df2.size // len(filtered_df2),  # number of columns
+        filtered_df2.columns.tolist()  # column names as a plain list
+    )
+
+# This function receives a DataFrame (df) and returns a tuple:
+# (1) The name of the asteroid with the highest absolute magnitude
+# (2) The maximum absolute magnitude value itself.
+def max_absolute_magnitude(df):
+
+    max_index_dist = df['Absolute Magnitude'].idxmax()  # get the index of the asteroid with the max distance value
+    name_of_max_dist = int(df.loc[max_index_dist, 'Name'])  # use the index to get the asteroid's name
+    max_magnitude = float(df.loc[max_index_dist, 'Absolute Magnitude'])  # use the index to get its magnitude
+    return name_of_max_dist, max_magnitude  # return as tuple
+
+# This function gets a df as argument and returns the name of the closest asteroid to earth
+def closest_to_earth(df):
+
+    min_index_dist = df['Miss Dist.(kilometers)'].idxmin() # get the index of the asteroid with the min distance value
+    name_of_closest_ast = int(df.loc[min_index_dist, 'Name']) # use the index to get the asteroid's name
+    return name_of_closest_ast
+
+# this function gets a df as argument and returns a dict with the Orbit ID as keys and number of asteroids in each route as values
+def common_orbit(df):
+
+    return df["Orbit ID"].value_counts().to_dict()
+
+# This function receives a DataFrame (df) and returns the number of asteroids
+# whose maximum estimated diameter ("Est Dia in KM(max)") is greater than the average maximum diameter
+# of all asteroids in the DataFrame
+def min_max_diameter(df):
+
+    max_D_avg = df['Est Dia in KM(max)'].mean() # calculate the average
+    new_df = df[df['Est Dia in KM(max)'] > max_D_avg] # create a new df where its values in the 'Est Dia in KM(max)' column are greater then the avg
+    return len(new_df)  # return how many asteroids are there
+
+def plt_hist_diameter(df):
+
+    avg_diameter = (df['Est Dia in KM(max)']+df['Est Dia in KM(min)'])/2 # calculates the average estimated diameter for each asteroid in the DataFrame. avg_diameter is a column
+    plt.hist(avg_diameter, bins = 100, color='steelblue', edgecolor='black') # plot a histogram graph. it will split the values in avg_dia to 100 bins
+    plt.xlabel('Average Value')
+    plt.ylabel('Count')
+    plt.title('Distribution of Average diameter size')
+    plt.grid(axis='y', linestyle='--')
+    plt.show()
+
+def plt_hist_common_orbit(df):
+
+    plt.hist(df['Minimum Orbit Intersection'], bins=10, color='skyblue', edgecolor='black') # plot a histogram graph. it will split the values in 'Minimum Orbit Intersection' to 10 bins
+    plt.xlabel('Minimum Orbit Intersection')
+    plt.ylabel('Number of Asteroids')
+    plt.title('Distribution of Asteroids by Minimum Orbit Intersection')
+    plt.grid(axis='y', linestyle='--')
+    plt.show()
+
+def plt_pie_hazard(df):
+
+    counts = df['Hazardous'].value_counts() # Counts the number of True and False
+    labels = counts.index.astype(str) # Converts True/False to 'True'/'False'
+    values = counts.values # This holds the counts for True and False
+    cols = ['lightcoral', 'lightskyblue']
+    explode = [0.12 if label == 'True' else 0 for label in labels]
+    plt.pie(values,
+            labels=labels,
+            colors=cols,
+            autopct='%1.1f%%',
+            explode=explode,
+            startangle=80
+            )
+
+    plt.title('Percentage of Hazardous and Non-Hazardous Asteroids')
+    plt.axis('equal')
+    plt.show()
+
+
+def plt_linear_motion_magnitude(df):
+    """
+    My observation:
+    If the regression line has a noticeable slope and the points follow a trend,
+    there may be a linear correlation. If the line is flat and the points scattered,
+    there is likely no strong correlation.
+    """
+
+    # Ensure data is numeric
+    x = pd.to_numeric(df['Miss Dist.(kilometers)'], errors='coerce')
+    y = pd.to_numeric(df['Miles per hour'], errors='coerce')
+
+    # Drop missing values
+    mask = x.notna() & y.notna()
+    x = x[mask]
+    y = y[mask]
+
+    # Linear regression calculation
+    slope, intercept, r_value, p_value, std_err = linregress(x, y)
+
+    # Create regression line values
+    regression_line = slope * x + intercept
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(x, y, alpha=0.5, label='Data points')
+    plt.plot(x, regression_line, color='red', label=f'Regression line (r={r_value:.2f})')
+    plt.xlabel('Absolute Magnitude')
+    plt.ylabel('Miles per hour')
+    plt.title('Linear Regression: Absolute Magnitude vs Miles per hour')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
