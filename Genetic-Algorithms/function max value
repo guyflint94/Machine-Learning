@@ -1,17 +1,16 @@
 import random
 
-fitness_lst = []
+fitness_lst = [] # this list will hold the score of each chromosome
 score = random.randint(0, 31)
 max_iterations = 0
 max_generations = 20
-
 
 # this is the function I want to maximize
 def func(x):
     return x ** 2
 
-
 # crossover function
+# this functions takes 2 parents and yields 2 new solutions (child1 and child2)
 def crossover(p1, p2):
     rnd_point = random.randint(0, 4)
     crossover_child1 = p1[:rnd_point] + p2[rnd_point:]
@@ -20,12 +19,14 @@ def crossover(p1, p2):
 
 
 # mutation function
+# top4 is a list of strings where each string is a representation of a chromosome
 def mutation(top4):
-    before_mutation = random.choice(top4)
+    before_mutation = random.choice(top4) # Picks one random string from the top4 list
     before_mutation_lst = list(before_mutation)
 
     rnd_position = random.randint(0, 4)
 
+    # flip one digit, 0 to 1 or 1 to 0. then use join to return a string
     if before_mutation_lst[rnd_position] == '0':
         before_mutation_lst[rnd_position] = '1'
     else:
@@ -34,39 +35,42 @@ def mutation(top4):
 
 
 # generate an initial population
+# create a random number between 0 and 31 and convert it to a binary 5 digit length number
+# do that 8 times so population is a list with 8 initial chromosomes
 population = [format(random.randint(0, 31), '05b') for num in range(8)]
-print(f"Initial Population Is: {population}")
+print(f"\nInitial Population Is: {population}\n")
 
 # evaluate fitness for each chromosome
 for chromo in population:
-    evaluate = func(int(chromo, 2))
-    fitness_lst.append(evaluate)
+    evaluate = func(int(chromo, 2)) # convert to a decimal number just for evaluation
+    fitness_lst.append(evaluate) # add the score to the fitness list
 
-# create a list of pairs (chromosome, fitness)
+# create a list of pairs (chromosome, fitness score)
 pop_fit = list(zip(population, fitness_lst))
 
+# sort the list by fitness valuation
 pop_fit.sort(key=lambda x: x[1], reverse=True)
-print(f"The Sorted Fitness list Is: {pop_fit}")
+print(f"The Sorted Fitness list Is: {pop_fit}\n")
 
 # get top 4 chromosomes
 top4 = [chrom for chrom, fit in pop_fit[:4]]
-print(f"top 4 chromosomes are: {top4}")
+print(f"top 4 chromosomes are: {top4}\n")
 
 while max_iterations < max_generations:
 
     # Clear the fitness list each iteration
     fitness_lst = []
 
-    # Crossover - Create 2 Children
+    # Crossover : Create 4 Children
     random.shuffle(top4)
     child1, child2 = crossover(top4[0], top4[1])
     child3, child4 = crossover(top4[2], top4[3])
     child_lst = [child1, child2, child3, child4]
 
-    # Mutation - Mutate Child0
+    # Mutation : Mutate Child0
     child_lst[0] = mutation(child_lst)
 
-    # New Population - Combine Parents And Children
+    # New Population : Combine Parents And Children
     population = top4 + child_lst
 
     # evaluate fitness for each chromosome
