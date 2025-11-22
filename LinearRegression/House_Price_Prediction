@@ -86,8 +86,10 @@ plt.title("Learning Curve")
 plt.grid(True)
 plt.show()
 
+# print the weights vector
 print(w)
 
+# return back to the 'real' unnormalized values range for the predicted prices
 f_w_b_unscaled = f_w_b * y_std + y_mean
 
 print("Predictions preview:", f_w_b_unscaled[:5])
