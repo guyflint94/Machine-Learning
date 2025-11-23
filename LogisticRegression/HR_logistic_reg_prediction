@@ -1,0 +1,84 @@
+the model will predict if an employee will leave the company or not
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn import linear_model
+pd.set_option("display.max_columns", None)
+
+df = pd.read_csv('HR_comma_sep.csv')
+
+# created dummies df for salary and department and convery to numeric values
+department_dummies = pd.get_dummies(df.Department)
+salary_dummies = pd.get_dummies(df.salary)
+department_dummies = department_dummies.astype(int)
+salary_dummies = salary_dummies.astype(int)
+df1 = df  # create a copy of df
+
+# create non-numeric df's for salary and department
+salary = df.salary
+department = df.Department
+
+df = df.drop(['Department', 'salary'], axis=1)  # drop salary and department from df
+
+merged_df = pd.concat([df, department_dummies, salary_dummies], axis=1)  # concatenate df with 2 dummies. merged_df is numeric only now
+
+salary_df = pd.concat([merged_df['high'], merged_df['low'], merged_df['medium']], axis=1)
+
+salary_df = pd.concat([merged_df['high'], merged_df['low'], merged_df['medium']], axis=1)
+
+"""
+Heatmap shows us correlation between features-target and features-features.
+correlation only measures linear relationships
+Rules of thumb (for logistic regression):
+|corr with target| > 0.3 → strong candidate feature.
+
+0.1 < |corr| < 0.3 → maybe useful, keep for now.
+|corr| < 0.1 → likely weak, but test before dropping.
+High correlation between features (>0.7) → drop one to avoid redundancy.
+"""
+corr = merged_df.corr(numeric_only=True)   # correlation matrix
+sns.heatmap(corr, annot=True, cmap="coolwarm")  # annot means we'll see numbers in the heatmap
+plt.show()
+
+# plot showing the impact of employees salaries on retention
+fig1, ax = plt.subplots(1, 1, figsize=(4, 2))
+sns.countplot(data=df1, x='salary', hue='left', ax=ax)
+ax.set_xlabel('Salary Level')
+ax.set_ylabel('Count')
+ax.set_title('Number of Employees Who Left by Salary Level')
+
+# plot showing the impact of employees salaries on retention
+fig2, ax = plt.subplots(1, 1, figsize=(4, 2))
+sns.countplot(data=df1, x='Department', hue='left', ax=ax)
+ax.set_xlabel('Department')
+ax.set_ylabel('Count')
+ax.set_title('Number of Employees Who Left by Department')
+
+"""we can see from the heatmap plot that the relevant features are :"
+1. satisfaction_level  2. average_monthly_hours  3. time_spend_company  4. promotion_last_5years  5. salary 
+ """
+
+#cols_lst = merged_df.columns  # create a list of all columns names
+#for word in cols_lst :
+#    if word == 'left':
+#        continue
+#    else :
+      #plt.scatter(df[word], df['left'])
+#        plt.xlabel(word)
+#        plt.ylabel('left')
+#        plt.grid(True)
+#        plt.show()
+
+x_train, x_test, y_train, y_test = train_test_split(merged_df[['satisfaction_level', 'average_montly_hours', 'time_spend_company', 'promotion_last_5years', 'high', 'medium', 'low']],
+                                                    merged_df['left'], test_size=0.2)
+
+model = linear_model.LogisticRegression()
+model.fit(x_train, y_train)
+
+y_pred = model.predict(x_test)
+print(f"predictions: {y_pred}")
+
+score = model.score(x_test, y_test)
+print(f'Linear Regression model score: {score}')
