@@ -1,0 +1,42 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn import linear_model
+from sklearn.model_selection import train_test_split
+import seaborn as sns
+from sklearn.datasets import load_digits
+from sklearn.metrics import confusion_matrix
+import random
+digits = load_digits()  # assign the imported data to 'digits' variable
+
+# create and train the logistic regression model
+xtrain, xtest, ytrain, ytest = train_test_split(digits.data, digits.target, test_size=0.2)
+model = linear_model.LogisticRegression(max_iter=10000)
+model.fit(xtrain, ytrain)
+
+# predict xtest and evaluate the model score
+y_pred = model.predict(xtest)
+score = model.score(xtest, ytest)
+print(f" model score: {score:.4f}")
+
+# create confustion matrix to compare truth vs predicted
+cm = confusion_matrix(ytest, y_pred)
+sns.heatmap(cm, annot=True)  # we can see that 9 is the most inconsistent number prediction
+plt.xlabel('Truth')
+plt.ylabel('Prediction')
+plt.show()
+
+# mutate a real 0 and try to change it to 8
+mutate_zero = digits.data[0].copy()
+mutate_zero[26:30] = 11
+mutate_zero[28:29] = 11
+mutate_zero = mutate_zero.reshape(8,8)
+
+plt.gray()  # print mutate 0
+plt.matshow(mutate_zero)
+plt.show()
+
+mutate_zero = mutate_zero.reshape(-1,64)
+
+# at the moment the model still predicts a 0 instead of 8
+print(model.predict(mutate_zero))
